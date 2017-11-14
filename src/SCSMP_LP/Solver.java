@@ -2,7 +2,9 @@ package SCSMP_LP;
 
 import java.util.HashMap;
 import java.util.HashSet;
-
+// #forbidden = n^3
+// complexity of forbidden = O(n)
+// overall complexity = O(n^4)
 public class Solver {
     private int n;
     private int[][] mpref;

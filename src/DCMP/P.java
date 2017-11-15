@@ -8,7 +8,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.locks.ReentrantLock;
 
-public class P implements PRMI{
+public class P implements PRMI, Runnable{
+    ReentrantLock mutex;
     public int id;
     //mpref[i] = woman id of rank i
     public int[] mpref;
@@ -17,25 +18,29 @@ public class P implements PRMI{
     public int curIdx;
     private int n;
 
+    // for thread
+    //type = true send message to man
+    //type = false send message to woman
+    String rmi = "";
+    Request request = null;
+    int toId = -1;
     //
 
 
-    //
     public P(int id, int[] mpref, HashMap<Integer, List<ConflictPair>> prerequisite){
         this.id = id;
         this.mpref = mpref;
         this.prerequisite = prerequisite;
         curIdx = -1;
         this.n = mpref.length;
+        this.mutex = new ReentrantLock();
     }
 
     //assumption
-    public Response CallMan(String rmi, Request req, int id) {
+    public Response Call(String rmi, Request req, int id) {
         return null;
     }
-    public Response CallWoman(String rmi, Request req, int id) {
-        return null;
-    }
+
     @Override
     public Response InitHandler(Request req) throws RemoteException {
         return null;
@@ -52,10 +57,29 @@ public class P implements PRMI{
                 List<ConflictPair> conflictPairs = prerequisite.get(curIdx);
                 if (conflictPairs != null) {
                     for (ConflictPair cp : conflictPairs) {
-                        CallMan("advance", new Request(id, cp.regret), cp.pId);
+                        mutex.lock();
+                        try{
+                            rmi = "advance";
+                            request = new Request(id, cp.regret);
+                            toId = cp.pId;
+                            new Thread(this).start();
+                        }finally {
+                            mutex.unlock();
+                        }
+
+//                        CallMan("advance", new Request(id, cp.regret), cp.pId);
                     }
                 }
-                CallWoman("proposal", new Request(id, curIdx), mpref[curIdx]);
+                mutex.lock();
+                try{
+                    rmi = "proposal";
+                    request = new Request(id, curIdx);
+                    toId = mpref[curIdx];
+                    new Thread(this).start();
+                }finally {
+                    mutex.unlock();
+                }
+//                CallWoman("proposal", new Request(id, curIdx), mpref[curIdx]);
             }
         }
         return new Response(true);
@@ -68,11 +92,29 @@ public class P implements PRMI{
             List<ConflictPair> conflictPairs = prerequisite.get(curIdx);
             if (conflictPairs != null) {
                 for (ConflictPair cp : conflictPairs) {
-                    CallMan("advance", new Request(id, cp.regret), cp.pId);
+                    mutex.lock();
+                    try{
+                        rmi = "advance";
+                        request = new Request(id, cp.regret);
+                        toId = cp.pId;
+                        new Thread(this).start();
+                    }finally {
+                        mutex.unlock();
+                    }
+//                    CallMan("advance", new Request(id, cp.regret), cp.pId);
                 }
             }
         }
-        CallWoman("proposal", new Request(id, curIdx), mpref[curIdx]);
+        mutex.lock();
+        try{
+            rmi = "proposal";
+            request = new Request(id, curIdx);
+            toId = mpref[curIdx];
+            new Thread(this).start();
+        }finally {
+            mutex.unlock();
+        }
+//                CallWoman("proposal", new Request(id, curIdx), mpref[curIdx]);
         return new Response(true);
     }
 
@@ -81,4 +123,8 @@ public class P implements PRMI{
         return null;
     }
 
+    @Override
+    public void run() {
+        Call(rmi, request, toId);
+    }
 }

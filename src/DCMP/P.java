@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.locks.ReentrantLock;
 
+
 public class P implements PRMI, Runnable{
     ReentrantLock mutex;
     public int id;
@@ -16,6 +17,11 @@ public class P implements PRMI, Runnable{
     //K = STEP V = List of ConflictPairs at this point
     public HashMap<Integer, List<ConflictPair>> prerequisite;
     public int curIdx;
+    public String[] peers;
+    public int[] ports;
+    public int nsize;
+    Registry registry;
+    PRMI stub;
     private int n;
 
     // for thread
@@ -27,18 +33,24 @@ public class P implements PRMI, Runnable{
     //
 
 
-    public P(int id, int[] mpref, HashMap<Integer, List<ConflictPair>> prerequisite){
+    public P(int id, int[] mpref, HashMap<Integer, List<ConflictPair>> prerequisite, String[] peers, int[] ports){
         this.id = id;
         this.mpref = mpref;
         this.prerequisite = prerequisite;
         curIdx = -1;
+        this.peers = peers;
+        this.ports = ports;
+        this.nsize = peers.length/2;
+        try{
+            System.setProperty("java.rmi.server.hostname", this.peers[this.id]);
+            registry = LocateRegistry.createRegistry(this.ports[this.id]);
+            stub = (PRMI) UnicastRemoteObject.exportObject(this, this.ports[this.id]);
+            registry.rebind("DCMP", stub);
+        } catch(Exception e){
+            e.printStackTrace();
+        }
         this.n = mpref.length;
         this.mutex = new ReentrantLock();
-    }
-
-    //assumption
-    public Response Call(String rmi, Request req, int id) {
-        return null;
     }
 
     @Override
@@ -127,4 +139,37 @@ public class P implements PRMI, Runnable{
     public void run() {
         Call(rmi, request, toId);
     }
+
+    public Response Call(String rmi, Request req, int id){
+        Response callReply = null;
+        Registry registry = null;
+        //PRMI stub;
+        try{
+            //Registry registry=LocateRegistry.getRegistry(this.ports[id]);
+            //stub=(PRMI) registry.lookup("DCMP");
+            if(rmi.equals("Advance")) {
+                registry=LocateRegistry.getRegistry(this.ports[id]);
+                PRMI stub = (PRMI) registry.lookup("DCMP");
+                callReply = stub.AdvanceHandler(req);
+            }
+            else if(rmi.equals("Init")) {
+                registry=LocateRegistry.getRegistry(this.ports[id]);
+                PRMI stub = (PRMI) registry.lookup("DCMP");
+                callReply = stub.InitHandler(req);
+               // System.out.println("Wrong parameters!");
+            }
+            else if(rmi.equals("Propose")) {
+                registry=LocateRegistry.getRegistry(this.ports[nsize+id]);
+                QRMI stub = (QRMI) registry.lookup("DCMP");
+                callReply = stub.ProposalHandler(req);
+            }
+            else{
+                System.out.println("Wrong parmeter.");
+            }
+        } catch(Exception e){
+            return null;
+        }
+        return callReply;
+    }
+
 }

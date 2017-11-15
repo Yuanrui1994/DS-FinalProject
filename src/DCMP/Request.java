@@ -1,6 +1,8 @@
 package DCMP;
 
-public class Request {
+import java.io.Serializable;
+
+public class Request implements Serializable {
     int myId;
     int regret;
     public Request(int myId, int regret){

@@ -5,8 +5,10 @@ import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.HashMap;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class Q implements QRMI {
+    ReentrantLock mutex;
     int id;
     // <K, V> = <MAN_ID, RANK OF THE MAN>
     public HashMap<Integer, Integer> rank;
@@ -24,6 +26,7 @@ public class Q implements QRMI {
         this.peers = peers;
         this.ports = ports;
         this.nsize = peers.length/2;
+        this.mutex = new ReentrantLock();
         try{
             System.setProperty("java.rmi.server.hostname", this.peers[nsize+this.id]);
             registry = LocateRegistry.createRegistry(this.ports[nsize+this.id]);
@@ -51,18 +54,22 @@ public class Q implements QRMI {
 
     @Override
     public Response ProposalHandler(Request req) throws RemoteException {
-        int thisMan = req.myId;
-        if(this.partner==-1){
-            this.partner = thisMan;
-            return new Response(true);
-        }
-        if(rank.get(this.partner)<rank.get(thisMan)){
-            return new Response(false);
-        }
-        else{
-            this.partner = thisMan;
-            Response resp = Call("Reject", req, this.id);//???
-            return new Response(true);
+        mutex.lock();
+        try {
+            int thisMan = req.myId;
+            if (this.partner == -1) {
+                this.partner = thisMan;
+                return new Response(true);
+            }
+            if (rank.get(this.partner) < rank.get(thisMan)) {
+                return new Response(false);
+            } else {
+                this.partner = thisMan;
+                Response resp = Call("Reject", req, this.id);//???
+                return new Response(true);
+            }
+        }finally{
+            mutex.unlock();
         }
     }
 

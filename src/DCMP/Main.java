@@ -1,12 +1,43 @@
 package DCMP;
 
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.concurrent.locks.ReentrantLock;
+
 public class Main {
     public static void main(String[] args){
+        Main m = new Main();
+        int matrixMan[][]  = {{4,1,2,3},
+                {2,3,1,4},
+                {3,1,4,2},
+                {2,4,3,1}};
+        int matrixWoman[][]  = {{4,1,3,2},
+                {1,4,2,3},
+                {1,2,4,3},
+                {3,1,4,2}};
+        HashMap<Integer, LinkedList<ConflictPair>> conflictPair = new HashMap<>();
+        for(int i=0;i<matrixMan.length;i++){
+            LinkedList<ConflictPair> list = new LinkedList<>();
+            list.add(new ConflictPair(0,i));
+            conflictPair.put(i,list);
+        }
+        LinkedList<HashMap<Integer, Integer>> womanrankList = new LinkedList<>();
+        for(int i=0;i<matrixWoman.length;i++){
+            HashMap<Integer, Integer> tempMap = new HashMap<>();
+            for(int j=0;j<matrixWoman[0].length;j++){
+                tempMap.put(matrixWoman[i][j],j);
+            }
+            womanrankList.add(tempMap);
+        }
+        m.initPQ(4, matrixMan, womanrankList,conflictPair);
 
     }
+    // P(int id, int[] mpref, HashMap<Integer, List<ConflictPair>> prerequisite, String[] peers, int[] ports)
+    // Q(int id, HashMap<Integer, Integer> rank, String[] peers, int[] ports)
     P[] ps = null;
     Q[] qs = null;
-    public void initPQ(int nsize){
+    public void initPQ(int nsize, int[][] matrixMan, LinkedList<HashMap<Integer, Integer>> womanRankList,HashMap<Integer, LinkedList<ConflictPair>> conflictPair){
         String host = "127.0.0.1";
         String[] peers = new String[nsize];
         int[] ports = new int[nsize];
@@ -16,11 +47,16 @@ public class Main {
             ports[i] = 1100+i;
             peers[i] = host;
         }
+
         for(int i = 0; i < nsize/2; i++){
-            ps[i] = new P(i,null, null, peers, ports);
+            if(i!=1)
+                 ps[i] = new P(i,matrixMan[i], null, peers, ports);
+            else
+                ps[i] = new P(i,matrixMan[i], conflictPair, peers, ports);
+
         }
         for(int i = 0; i < nsize/2; i++){
-            qs[i] = new Q(i, null, peers, ports);
+            qs[i] = new Q(i, womanRankList.get(i), peers, ports);
         }
     }
     private void cleanup(){

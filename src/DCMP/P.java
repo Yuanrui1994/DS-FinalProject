@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.concurrent.locks.ReentrantLock;
 
 
-public class P implements PRMI, Runnable{
+public class P implements PRMI{
     ReentrantLock mutex;
     public int id;
     //mpref[i] = woman id of rank i
@@ -24,13 +24,13 @@ public class P implements PRMI, Runnable{
     PRMI stub;
     private int n;
 
-    // for thread
-    //type = true send message to man
-    //type = false send message to woman
-    String rmi = "";
-    Request request = null;
-    int toId = -1;
-    //
+//    // for thread
+//    //type = true send message to man
+//    //type = false send message to woman
+//    String rmi = "";
+//    Request request = null;
+//    int toId = -1;
+//    //
 
 
     public P(int id, int[] mpref, HashMap<Integer, List<ConflictPair>> prerequisite, String[] peers, int[] ports){
@@ -69,29 +69,33 @@ public class P implements PRMI, Runnable{
                 List<ConflictPair> conflictPairs = prerequisite.get(curIdx);
                 if (conflictPairs != null) {
                     for (ConflictPair cp : conflictPairs) {
-                        mutex.lock();
-                        try{
-                            rmi = "advance";
-                            request = new Request(id, cp.regret);
-                            toId = cp.pId;
-                            new Thread(this).start();
-                        }finally {
-                            mutex.unlock();
-                        }
-
-//                        CallMan("advance", new Request(id, cp.regret), cp.pId);
+//                        mutex.lock();
+//                        try{
+//                            rmi = "advance";
+//                            request = new Request(id, cp.regret);
+//                            toId = cp.pId;
+//                            new Thread(this).start();
+//                        }finally {
+//                            mutex.unlock();
+//                        }
+//
+////                        CallMan("advance", new Request(id, cp.regret), cp.pId);
+                        Runnable r = new PClient("advance", new Request(id, cp.regret), cp.pId, this.ports);
+                        new Thread(r).start();
                     }
                 }
-                mutex.lock();
-                try{
-                    rmi = "proposal";
-                    request = new Request(id, curIdx);
-                    toId = mpref[curIdx];
-                    new Thread(this).start();
-                }finally {
-                    mutex.unlock();
-                }
-//                CallWoman("proposal", new Request(id, curIdx), mpref[curIdx]);
+//                mutex.lock();
+//                try{
+//                    rmi = "proposal";
+//                    request = new Request(id, curIdx);
+//                    toId = mpref[curIdx];
+//                    new Thread(this).start();
+//                }finally {
+//                    mutex.unlock();
+//                }
+////                CallWoman("proposal", new Request(id, curIdx), mpref[curIdx]);
+                Runnable r = new PClient("proposal", new Request(id, curIdx), mpref[curIdx], this.ports);
+                new Thread(r).start();
             }
         }
         return new Response(true);
@@ -104,29 +108,33 @@ public class P implements PRMI, Runnable{
             List<ConflictPair> conflictPairs = prerequisite.get(curIdx);
             if (conflictPairs != null) {
                 for (ConflictPair cp : conflictPairs) {
-                    mutex.lock();
-                    try{
-                        rmi = "advance";
-                        request = new Request(id, cp.regret);
-                        toId = cp.pId;
-                        new Thread(this).start();
-                    }finally {
-                        mutex.unlock();
-                    }
+//                    mutex.lock();
+//                    try{
+//                        rmi = "advance";
+//                        request = new Request(id, cp.regret);
+//                        toId = cp.pId;
+//                        new Thread(this).start();
+//                    }finally {
+//                        mutex.unlock();
+//                    }
 //                    CallMan("advance", new Request(id, cp.regret), cp.pId);
+                    Runnable r = new PClient("advance", new Request(id, cp.regret), cp.pId, this.ports);
+                    new Thread(r).start();
                 }
             }
         }
-        mutex.lock();
-        try{
-            rmi = "proposal";
-            request = new Request(id, curIdx);
-            toId = mpref[curIdx];
-            new Thread(this).start();
-        }finally {
-            mutex.unlock();
-        }
+//        mutex.lock();
+//        try{
+//            rmi = "proposal";
+//            request = new Request(id, curIdx);
+//            toId = mpref[curIdx];
+//            new Thread(this).start();
+//        }finally {
+//            mutex.unlock();
+//        }
 //                CallWoman("proposal", new Request(id, curIdx), mpref[curIdx]);
+        Runnable r = new PClient("proposal", new Request(id, curIdx), mpref[curIdx], this.ports);
+        new Thread(r).start();
         return new Response(true);
     }
 
@@ -134,43 +142,43 @@ public class P implements PRMI, Runnable{
     public Response SignalHandler(Request req) throws RemoteException {
         return null;
     }
-
-    @Override
-    public void run() {
-        Call(rmi, request, toId);
-    }
-
-    public Response Call(String rmi, Request req, int id){
-        Response callReply = null;
-        Registry registry = null;
-        //PRMI stub;
-        try{
-            //Registry registry=LocateRegistry.getRegistry(this.ports[id]);
-            //stub=(PRMI) registry.lookup("DCMP");
-            if(rmi.equals("Advance")) {
-                registry=LocateRegistry.getRegistry(this.ports[id]);
-                PRMI stub = (PRMI) registry.lookup("DCMP");
-                callReply = stub.AdvanceHandler(req);
-            }
-            else if(rmi.equals("Init")) {
-                registry=LocateRegistry.getRegistry(this.ports[id]);
-                PRMI stub = (PRMI) registry.lookup("DCMP");
-                callReply = stub.InitHandler(req);
-               // System.out.println("Wrong parameters!");
-            }
-            else if(rmi.equals("Propose")) {
-                registry=LocateRegistry.getRegistry(this.ports[nsize+id]);
-                QRMI stub = (QRMI) registry.lookup("DCMP");
-                callReply = stub.ProposalHandler(req);
-            }
-            else{
-                System.out.println("Wrong parmeter.");
-            }
-        } catch(Exception e){
-            return null;
-        }
-        return callReply;
-    }
+//
+//    @Override
+//    public void run() {
+//        Call(rmi, request, toId);
+//    }
+//
+//    public Response Call(String rmi, Request req, int id){
+//        Response callReply = null;
+//        Registry registry = null;
+//        //PRMI stub;
+//        try{
+//            //Registry registry=LocateRegistry.getRegistry(this.ports[id]);
+//            //stub=(PRMI) registry.lookup("DCMP");
+//            if(rmi.equals("Advance")) {
+//                registry=LocateRegistry.getRegistry(this.ports[id]);
+//                PRMI stub = (PRMI) registry.lookup("DCMP");
+//                callReply = stub.AdvanceHandler(req);
+//            }
+//            else if(rmi.equals("Init")) {
+//                registry=LocateRegistry.getRegistry(this.ports[id]);
+//                PRMI stub = (PRMI) registry.lookup("DCMP");
+//                callReply = stub.InitHandler(req);
+//               // System.out.println("Wrong parameters!");
+//            }
+//            else if(rmi.equals("Propose")) {
+//                registry=LocateRegistry.getRegistry(this.ports[nsize+id]);
+//                QRMI stub = (QRMI) registry.lookup("DCMP");
+//                callReply = stub.ProposalHandler(req);
+//            }
+//            else{
+//                System.out.println("Wrong parmeter.");
+//            }
+//        } catch(Exception e){
+//            return null;
+//        }
+//        return callReply;
+//    }
     public void Kill(){
         if(this.registry != null){
             try {

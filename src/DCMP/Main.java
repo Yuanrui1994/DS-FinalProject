@@ -23,5 +23,17 @@ public class Main {
             qs[i] = new Q(i, null, peers, ports);
         }
     }
+    private void cleanup(){
+        for(int i = 0; i < ps.length; i++){
+            if(ps[i] != null){
+                ps[i].Kill();
+            }
+        }
+        for(int i = 0; i < qs.length; i++){
+            if(qs[i] != null){
+                qs[i].Kill();
+            }
+        }
+    }
 
 }

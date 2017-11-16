@@ -70,4 +70,13 @@ public class Q implements QRMI {
     public Response SignalHandler(Request req) throws RemoteException {
         return null;
     }
+    public void Kill(){
+        if(this.registry != null){
+            try {
+                UnicastRemoteObject.unexportObject(this.registry, true);
+            } catch(Exception e){
+                System.out.println("None reference");
+            }
+        }
+    }
 }

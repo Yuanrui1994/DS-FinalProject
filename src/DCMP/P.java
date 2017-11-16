@@ -171,5 +171,14 @@ public class P implements PRMI, Runnable{
         }
         return callReply;
     }
+    public void Kill(){
+        if(this.registry != null){
+            try {
+                UnicastRemoteObject.unexportObject(this.registry, true);
+            } catch(Exception e){
+                System.out.println("None reference");
+            }
+        }
+    }
 
 }

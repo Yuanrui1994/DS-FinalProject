@@ -1,5 +1,6 @@
 package DCMP;
 
+import java.io.IOException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 
@@ -19,28 +20,29 @@ public class PClient implements Runnable{
     public Response Call(String rmi, Request req, int id){
         Response callReply = null;
         Registry registry = null;
-        //PRMI stub;
         try{
             //Registry registry=LocateRegistry.getRegistry(this.ports[id]);
             //stub=(PRMI) registry.lookup("DCMP");
             if(rmi.equals("Advance")) {
                 registry= LocateRegistry.getRegistry(this.ports[id]);
                 PRMI stub = (PRMI) registry.lookup("DCMP");
+                System.out.println("man "+req.myId+" call Advance to man "+id);
                 callReply = stub.AdvanceHandler(req);
             }
             else if(rmi.equals("Init")) {
-                registry=LocateRegistry.getRegistry(this.ports[id]);
-                PRMI stub = (PRMI) registry.lookup("DCMP");
-                callReply = stub.InitHandler(req);
+//                registry=LocateRegistry.getRegistry(this.ports[id]);
+//                PRMI stub = (PRMI) registry.lookup("DCMP");
+//                callReply = stub.InitHandler(req);
                 // System.out.println("Wrong parameters!");
             }
             else if(rmi.equals("Propose")) {
                 registry=LocateRegistry.getRegistry(this.ports[nsize+id]);
                 QRMI stub = (QRMI) registry.lookup("DCMP");
+                System.out.println("man "+req.myId+" call Propose to woman "+id);
                 callReply = stub.ProposalHandler(req);
             }
             else{
-                System.out.println("Wrong parmeter.");
+                System.out.println("Wrong parameter.");
             }
         } catch(Exception e){
             return null;
@@ -50,6 +52,12 @@ public class PClient implements Runnable{
 
     @Override
     public void run() {
-        Call(rmi, request,toId);
+        try {
+            Call(rmi, request, toId);
+        } catch (Exception e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        return;
     }
 }

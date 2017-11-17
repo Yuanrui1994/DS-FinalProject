@@ -42,8 +42,10 @@ public class Q implements QRMI {
         try{
             Registry registry=LocateRegistry.getRegistry(this.ports[id]);
             stub=(PRMI) registry.lookup("DCMP");
-            if(rmi.equals("Reject"))
+            if(rmi.equals("Reject")) {
+                System.out.println("woman "+req.myId+" call Reject to man "+id);
                 callReply = stub.RejectHandler(req);
+            }
             else
                 System.out.println("Wrong parameters!");
         } catch(Exception e){
@@ -53,28 +55,28 @@ public class Q implements QRMI {
     }
 
     @Override
-    public Response ProposalHandler(Request req) throws RemoteException {
-        mutex.lock();
-        try {
-            int thisMan = req.myId;
+    public synchronized Response ProposalHandler(Request req) throws RemoteException {
+        System.out.println("    woman "+this.id + " is in Propose handler requested from man "+req.myId);
+//      System.out.println("        partner:"+this.partner+ "(rank"+rank.get(this.partner)+") thisman:"+req.myId+ "(rank"+ rank.get(req.myId)+")");
+
+
+        int thisMan = req.myId;
             if (this.partner == -1) {
                 this.partner = thisMan;
                 return new Response(true);
             }
             if (rank.get(this.partner) < rank.get(thisMan)) {
+                Call("Reject", new Request(this.id,-1),thisMan);
                 return new Response(false);
             } else {
+                Call("Reject", new Request(this.id, -1),this.partner);//???
                 this.partner = thisMan;
-                Response resp = Call("Reject", req, this.id);//???
                 return new Response(true);
             }
-        }finally{
-            mutex.unlock();
-        }
     }
 
     @Override
-    public Response SignalHandler(Request req) throws RemoteException {
+    public synchronized Response SignalHandler(Request req) throws RemoteException {
         return null;
     }
     public void Kill(){

@@ -1,4 +1,4 @@
 package DCMP;
 
-public class E {
+public class E{
 }

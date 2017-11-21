@@ -19,6 +19,10 @@ public class Q implements QRMI {
     Registry registry;
     QRMI stub;
 
+    public boolean isActive;
+    public int D;
+    public int parent;
+
     public Q(int id, HashMap<Integer, Integer> rank, String[] peers, int[] ports){
         this.id = id;
         this.rank = rank;
@@ -27,6 +31,9 @@ public class Q implements QRMI {
         this.ports = ports;
         this.nsize = peers.length/2;
         this.mutex = new ReentrantLock();
+        this.D = 0;
+        this.parent = -1;
+        this.isActive = false;
         try{
             System.setProperty("java.rmi.server.hostname", this.peers[nsize+this.id]);
             registry = LocateRegistry.createRegistry(this.ports[nsize+this.id]);
@@ -37,21 +44,37 @@ public class Q implements QRMI {
         }
     }
     public Response Call(String rmi, Request req, int id){
-        Response callReply = null;
+       // Response callReply = null;
         PRMI stub;
         try{
-            Registry registry=LocateRegistry.getRegistry(this.ports[id]);
-            stub=(PRMI) registry.lookup("DCMP");
             if(rmi.equals("Reject")) {
+                Registry registry=LocateRegistry.getRegistry(this.ports[id]);
+                stub=(PRMI) registry.lookup("DCMP");
                 System.out.println("woman "+req.myId+" call Reject to man "+id);
-                callReply = stub.RejectHandler(req);
+                stub.RejectHandler(req);
+            }
+            else if(rmi.equals("Signal")){
+                int portId;
+
+                if(this.parent>=this.nsize && this.parent<2*this.nsize){
+                    portId = id + this.nsize;
+                    System.out.println("woman "+req.myId+" call Signal to woman "+id);
+                }
+                else {
+                    portId = id;
+                    System.out.println("woman "+req.myId+" call Signal to man "+id);
+                }
+                Registry registry=LocateRegistry.getRegistry(this.ports[portId]);
+                stub=(PRMI) registry.lookup("DCMP");
+//                System.out.println("woman "+req.myId+" call Signal to man "+id);
+                stub.SignalHandler(req);
             }
             else
                 System.out.println("Wrong parameters!");
         } catch(Exception e){
             return null;
         }
-        return callReply;
+        return null;
     }
 
     @Override
@@ -59,24 +82,48 @@ public class Q implements QRMI {
         System.out.println("    woman "+this.id + " is in Propose handler requested from man "+req.myId);
 //      System.out.println("        partner:"+this.partner+ "(rank"+rank.get(this.partner)+") thisman:"+req.myId+ "(rank"+ rank.get(req.myId)+")");
 
+        if(this.parent==-1){
+            this.isActive = true;
+            this.parent = req.myId;
+            System.out.println("        woman"+ this.id +"'s parent is:"+this.parent);
+        }
+        else {
+            Call("Signal",new Request(this.id, -1,'q'),req.myId);
+        }
 
         int thisMan = req.myId;
             if (this.partner == -1) {
                 this.partner = thisMan;
-                return new Response(true);
+
             }
-            if (rank.get(this.partner) < rank.get(thisMan)) {
-                Call("Reject", new Request(this.id,-1),thisMan);
-                return new Response(false);
+            else if (rank.get(this.partner) < rank.get(thisMan)) {
+                System.out.println("        woman"+ this.id+ " will reject man "+thisMan);
+                Call("Reject", new Request(this.id,-1, 'q'),thisMan);
+                this.D = this.D+1;
+
             } else {
-                Call("Reject", new Request(this.id, -1),this.partner);//???
+                System.out.println("        woman"+ this.id+ " will reject man "+ this.partner);
+                Call("Reject", new Request(this.id, -1, 'q'),this.partner);//???
                 this.partner = thisMan;
-                return new Response(true);
+                this.D = this.D+1;
             }
+        this.isActive = false;
+        if(this.D == 0 && this.parent!=-1 && this.isActive ==false){
+            Call("Signal",new Request(this.id, -1,'q'),this.parent);
+            this.parent = -1;
+        }
+
+            return new Response(true);
+
     }
 
     @Override
     public synchronized Response SignalHandler(Request req) throws RemoteException {
+        this.D = this.D - 1;
+        if(this.D == 0 && this.parent!=-1 && this.isActive ==false){
+            Call("Signal",new Request(this.id, -1,'q'),this.parent);
+            this.parent = -1;
+        }
         return null;
     }
     public void Kill(){

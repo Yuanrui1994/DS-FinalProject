@@ -52,14 +52,20 @@ public class P implements PRMI {
 
     public synchronized void InitHandler(Request req) {
         isActive = true;
+        System.out.println("    man " + this.id + " is in Init handler requested from woman " + req.myId);
         if (parent == -1) {
-            parent = req.myId;
+           // parent = req.myId;
+            if(req.gender!='q')
+                parent = req.myId;
+            else
+                parent = req.myId + this.nsize;
+            System.out.println("        man"+ this.id +"'s parent is:"+this.parent);
         } else {
-            Runnable r = new PClient("Signal", new Request(this.id, curIdx), req.myId, this.ports);
+            Runnable r = new PClient("Signal", new Request(this.id, curIdx, 'p'), req.myId, this.ports);
             new Thread(r).start();
         }
         D++;
-        Runnable r = new PClient("Propose", new Request(this.id, curIdx++), this.mpref[0], this.ports);
+        Runnable r = new PClient("Propose", new Request(this.id, curIdx++,'p'), this.mpref[0], this.ports);
         new Thread(r).start();
         isActive = false;
     }
@@ -67,13 +73,19 @@ public class P implements PRMI {
     @Override
     public synchronized void RejectHandler(Request req) throws RemoteException {
         isActive = true;
+        System.out.println("    man " + this.id + " is in Rejestion handler requested from woman " + req.myId);
+        boolean justJoinedTree = false;
         if (parent == -1) {
-            parent = req.myId;
+           // parent = req.myId;
+            parent = req.myId + this.nsize;
+            System.out.println("        man"+ this.id +"'s parent is:"+this.parent);
+            justJoinedTree = true;
+
         } else {
-            Runnable r = new PClient("Signal", new Request(this.id, curIdx), req.myId, this.ports);
+            Runnable r = new PClient("Signal", new Request(this.id, curIdx,'q'), req.myId, this.ports);
             new Thread(r).start();
         }
-        System.out.println("    man " + this.id + " is in Rejestion handler requested from woman " + req.myId);
+
         if (curIdx != -1 && mpref[curIdx] == req.myId) {
             if (curIdx == n - 1) {
                 // do i need to broadcast this message?
@@ -85,15 +97,23 @@ public class P implements PRMI {
                     if (conflictPairs != null) {
                         for (ConflictPair cp : conflictPairs) {
                             D++;
-                            Runnable r = new PClient("Advance", new Request(id, cp.regret), cp.pId, this.ports);
+                            Runnable r = new PClient("Advance", new Request(id, cp.regret,'p'), cp.pId, this.ports);
                             new Thread(r).start();
                         }
                     }
                 }
                 D++;
-                Runnable r = new PClient("Propose", new Request(id, curIdx), mpref[curIdx], this.ports);
+                Runnable r = new PClient("Propose", new Request(id, curIdx,'q'), mpref[curIdx], this.ports);
                 new Thread(r).start();
 
+            }
+        }else{
+            if(justJoinedTree==true){
+                System.out.println("reject comes in too lateeeeeeeeeeeeeeeeeee.");
+//                *******
+                Runnable r = new PClient("Signal", new Request(this.id, curIdx,'q'), this.parent-nsize, this.ports);
+                new Thread(r).start();
+                this.parent = -1;
             }
         }
         isActive = false;
@@ -101,11 +121,14 @@ public class P implements PRMI {
 
     @Override
     public synchronized void AdvanceHandler(Request req) throws RemoteException {
+        System.out.println("    man " + this.id + " is in Advance handler requested from woman " + req.myId);
         isActive = true;
         if (parent == -1) {
+           // parent = req.myId;
             parent = req.myId;
+            System.out.println("       man"+ this.id +"'s parent is:"+this.parent);
         } else {
-            Runnable r = new PClient("Signal", new Request(this.id, curIdx), req.myId, this.ports);
+            Runnable r = new PClient("Signal", new Request(this.id, curIdx, 'p'), req.myId, this.ports);
             new Thread(r).start();
         }
         while (curIdx < req.regret) {
@@ -115,14 +138,14 @@ public class P implements PRMI {
                 if (conflictPairs != null) {
                     for (ConflictPair cp : conflictPairs) {
                         D++;
-                        Runnable r = new PClient("Advance", new Request(id, cp.regret), cp.pId, this.ports);
+                        Runnable r = new PClient("Advance", new Request(id, cp.regret,'p'), cp.pId, this.ports);
                         new Thread(r).start();
                     }
                 }
             }
         }
         D++;
-        Runnable r = new PClient("Propose", new Request(id, curIdx), mpref[curIdx], this.ports);
+        Runnable r = new PClient("Propose", new Request(id, curIdx,'q'), mpref[curIdx], this.ports);
         new Thread(r).start();
         isActive = false;
     }
@@ -131,7 +154,22 @@ public class P implements PRMI {
     public synchronized void SignalHandler(Request req) throws RemoteException {
         D--;
         if (!isActive && D == 0 && parent != -1) {
-            Runnable r = new PClient("Signal", new Request(this.id, curIdx), req.myId, this.ports);
+            char toGender;
+            int toId;
+            if(parent<nsize) {
+                toGender = 'p';
+                toId = this.parent;
+            }
+            else if(parent==2*nsize) {
+                toGender = 'e';
+                toId = this.parent;
+            }
+            else {
+                toGender = 'q';
+                toId = parent - nsize;
+            }
+            Runnable r = new PClient("Signal", new Request(this.id, curIdx, toGender), toId, this.ports);
+            System.out.println("            man "+this.id+ " will leave the tree by signaling "+ this.parent);
             new Thread(r).start();
             parent = -1;
         }

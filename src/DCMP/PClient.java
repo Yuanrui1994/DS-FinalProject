@@ -29,14 +29,20 @@ public class PClient implements Runnable {
                 System.out.println("man " + req.myId + " call Advance to man " + id);
                 stub.AdvanceHandler(req);
             } else if (rmi.equals("Signal")) {
-                registry = LocateRegistry.getRegistry(this.ports[id]);
-                if (id < nsize) {
+                char gender = req.gender;
+                if (gender=='p') {
+                    registry = LocateRegistry.getRegistry(this.ports[id]);
+                    System.out.println("man " + req.myId + " call Signal to man " + id);
                     PRMI stub = (PRMI) registry.lookup("DCMP");
                     stub.SignalHandler(req);
-                } else if (id < nsize * 2) {
+                } else if (gender=='q') {
+                    registry = LocateRegistry.getRegistry(this.ports[this.nsize+id]);
+                    System.out.println("man " + req.myId + " call Signal to woman " + id);
                     QRMI stub = (QRMI) registry.lookup("DCMP");
                     stub.SignalHandler(req);
                 } else {
+                    registry = LocateRegistry.getRegistry(this.ports[2*this.nsize]);
+                    System.out.println("man " + req.myId + " call Signal to env.");
                     ERMI stub = (ERMI) registry.lookup("DCMP");
                     stub.SignalHandler(req);
                 }

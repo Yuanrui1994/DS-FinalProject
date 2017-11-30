@@ -44,19 +44,25 @@ public class Main {
             m.e.Start();
 
             while(m.e.isTerminate==false){
-                System.out.println("e.D"+ m.e.D);
+                //System.out.println("e.D"+ m.e.D);
                 try {
                   Thread.sleep(1000);
                 } catch (Exception e) {
                   e.printStackTrace();
                 }
             }
-            for (int i = 0; i < m.ps.length; i++)
-                System.out.println("man " + i + "'s partnerIndex is: " + m.ps[i].curIdx);
+            if(m.e.isSuccess==true) {
+                System.out.println("********************************");
+                for (int i = 0; i < m.ps.length; i++)
+                    System.out.println("man " + i + "'s partner is woman " + matrixMan[i][m.ps[i].curIdx]);
+            }else{
+                System.out.println("********************************");
+                System.out.println("No stable marriage found:(");
+            }
         }finally {
             m.cleanup();
         }
-        //exit(2);
+        exit(0);
     }
     // P(int id, int[] mpref, HashMap<Integer, List<ConflictPair>> prerequisite, String[] peers, int[] ports)
     // Q(int id, HashMap<Integer, Integer> rank, String[] peers, int[] ports)

@@ -66,7 +66,7 @@ public class Q implements QRMI {
                 }
                 Registry registry=LocateRegistry.getRegistry(this.ports[portId]);
                 stub=(PRMI) registry.lookup("DCMP");
-//                System.out.println("woman "+req.myId+" call Signal to man "+id);
+                System.out.println("woman "+req.myId+" call Signal to man "+id);
                 stub.SignalHandler(req);
             }
             else
@@ -79,13 +79,13 @@ public class Q implements QRMI {
 
     @Override
     public synchronized Response ProposalHandler(Request req) throws RemoteException {
-        System.out.println("    woman "+this.id + " is in Propose handler requested from man "+req.myId);
+//        System.out.println("    woman "+this.id + " is in Propose handler requested from man "+req.myId);
 //      System.out.println("        partner:"+this.partner+ "(rank"+rank.get(this.partner)+") thisman:"+req.myId+ "(rank"+ rank.get(req.myId)+")");
 
         if(this.parent==-1){
             this.isActive = true;
             this.parent = req.myId;
-            System.out.println("        woman"+ this.id +"'s parent is:"+this.parent);
+//            System.out.println("        woman"+ this.id +"'s parent is:"+this.parent);
         }
         else {
             Call("Signal",new Request(this.id, -1,'q'),req.myId);
@@ -97,12 +97,12 @@ public class Q implements QRMI {
 
             }
             else if (rank.get(this.partner) < rank.get(thisMan)) {
-                System.out.println("        woman"+ this.id+ " will reject man "+thisMan);
+//                System.out.println("        woman"+ this.id+ " will reject man "+thisMan);
                 Call("Reject", new Request(this.id,-1, 'q'),thisMan);
                 this.D = this.D+1;
 
             } else {
-                System.out.println("        woman"+ this.id+ " will reject man "+ this.partner);
+//                System.out.println("        woman"+ this.id+ " will reject man "+ this.partner);
                 Call("Reject", new Request(this.id, -1, 'q'),this.partner);//???
                 this.partner = thisMan;
                 this.D = this.D+1;

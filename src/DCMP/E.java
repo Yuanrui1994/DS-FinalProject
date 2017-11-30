@@ -9,6 +9,7 @@ public class E implements ERMI {
      public int id;
      public boolean isTerminate;
      public int D;
+     public boolean isSuccess;
      //int parent;
      public String[] peers;
      public int[] ports;
@@ -41,6 +42,7 @@ public class E implements ERMI {
          this.peers = peers;
          this.id = id;
          this.nsize = peers.length/2;
+         this.isSuccess = true;
          try{
              System.setProperty("java.rmi.server.hostname", this.peers[this.id]);
              registry = LocateRegistry.createRegistry(this.ports[this.id]);
@@ -54,11 +56,19 @@ public class E implements ERMI {
     @Override
     public synchronized Response SignalHandler(Request req) throws RemoteException{
          int childId = req.myId;
-         System.out.println("E is in SignalHandler requested from "+childId);
+//         System.out.println("E is in SignalHandler requested from "+childId);
          this.D = this.D-1;
          if(this.D==0){
              this.isTerminate = true;
          }
          return new Response(true);
+    }
+    @Override
+    public synchronized Response FailHandler(Request req) throws RemoteException {
+
+//        System.out.println("E is in FailHandler requested from "+ req.myId);
+        this.isTerminate = true;
+        this.isSuccess = false;
+        return null;
     }
 }

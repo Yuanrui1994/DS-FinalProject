@@ -51,7 +51,12 @@ public class PClient implements Runnable {
                 QRMI stub = (QRMI) registry.lookup("DCMP");
                 System.out.println("man " + req.myId + " call Propose to woman " + id);
                 stub.ProposalHandler(req);
-            } else {
+            } else if(rmi.equals("Fail")){
+                registry = LocateRegistry.getRegistry(this.ports[2*nsize]);
+                ERMI stub = (ERMI) registry.lookup("DCMP");
+                stub.FailHandler(req);
+            }
+            else {
                 System.out.println("Wrong parameter.");
             }
         } catch (Exception e) {

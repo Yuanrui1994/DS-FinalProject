@@ -52,14 +52,14 @@ public class P implements PRMI {
 
     public synchronized void InitHandler(Request req) {
         isActive = true;
-        System.out.println("    man " + this.id + " is in Init handler requested from woman " + req.myId);
+//        System.out.println("    man " + this.id + " is in Init handler requested from woman " + req.myId);
         if (parent == -1) {
            // parent = req.myId;
             if(req.gender!='q')
                 parent = req.myId;
             else
                 parent = req.myId + this.nsize;
-            System.out.println("        man"+ this.id +"'s parent is:"+this.parent);
+//            System.out.println("        man"+ this.id +"'s parent is:"+this.parent);
         } else {
             Runnable r = new PClient("Signal", new Request(this.id, curIdx, 'p'), req.myId, this.ports);
             new Thread(r).start();
@@ -73,12 +73,12 @@ public class P implements PRMI {
     @Override
     public synchronized void RejectHandler(Request req) throws RemoteException {
         isActive = true;
-        System.out.println("    man " + this.id + " is in Rejestion handler requested from woman " + req.myId);
+//        System.out.println("    man " + this.id + " is in Rejection handler requested from woman " + req.myId);
         boolean justJoinedTree = false;
         if (parent == -1) {
            // parent = req.myId;
             parent = req.myId + this.nsize;
-            System.out.println("        man"+ this.id +"'s parent is:"+this.parent);
+//            System.out.println("        man"+ this.id +"'s parent is:"+this.parent);
             //justJoinedTree = true;
 
         } else {
@@ -90,6 +90,10 @@ public class P implements PRMI {
             if (curIdx == n - 1) {
                 // do i need to broadcast this message?
                 System.out.println("no constrained stable marriage possible");
+                Runnable r = new PClient("Fail", new Request(id, curIdx,'e'), 2*nsize, this.ports);
+                new Thread(r).start();
+                return;
+
             } else {
                 curIdx++;
                 if (prerequisite != null && this.prerequisite.containsKey(curIdx)) {
@@ -124,31 +128,21 @@ public class P implements PRMI {
                 toId = parent - nsize;
             }
             Runnable r = new PClient("Signal", new Request(this.id, curIdx, toGender), toId, this.ports);
-            System.out.println("            man "+this.id+ " will leave the tree by signaling "+ this.parent);
+//            System.out.println("            man "+this.id+ " will leave the tree by signaling "+ this.parent);
             new Thread(r).start();
             parent = -1;
         }
-        //isActive = false;
-//        else{
-//            if(justJoinedTree==true){
-//                System.out.println("reject comes in too lateeeeeeeeeeeeeeeeeee.");
-//                Runnable r = new PClient("Signal", new Request(this.id, curIdx,'q'), this.parent-nsize, this.ports);
-//                new Thread(r).start();
-//                this.parent = -1;
-//            }
-//        }
-
         isActive = false;
     }
 
     @Override
     public synchronized void AdvanceHandler(Request req) throws RemoteException {
-        System.out.println("    man " + this.id + " is in Advance handler requested from woman " + req.myId);
+//        System.out.println("    man " + this.id + " is in Advance handler requested from woman " + req.myId);
         isActive = true;
         if (parent == -1) {
            // parent = req.myId;
             parent = req.myId;
-            System.out.println("       man"+ this.id +"'s parent is:"+this.parent);
+//            System.out.println("       man"+ this.id +"'s parent is:"+this.parent);
         } else {
             Runnable r = new PClient("Signal", new Request(this.id, curIdx, 'p'), req.myId, this.ports);
             new Thread(r).start();
@@ -186,7 +180,7 @@ public class P implements PRMI {
                 toId = parent - nsize;
             }
             Runnable r = new PClient("Signal", new Request(this.id, curIdx, toGender), toId, this.ports);
-            System.out.println("            man "+this.id+ " will leave the tree by signaling "+ this.parent);
+//            System.out.println("            man "+this.id+ " will leave the tree by signaling "+ this.parent);
             new Thread(r).start();
             parent = -1;
         }
@@ -212,7 +206,7 @@ public class P implements PRMI {
                 toId = parent - nsize;
             }
             Runnable r = new PClient("Signal", new Request(this.id, curIdx, toGender), toId, this.ports);
-            System.out.println("            man "+this.id+ " will leave the tree by signaling "+ this.parent);
+//            System.out.println("            man "+this.id+ " will leave the tree by signaling "+ this.parent);
             new Thread(r).start();
             parent = -1;
         }
